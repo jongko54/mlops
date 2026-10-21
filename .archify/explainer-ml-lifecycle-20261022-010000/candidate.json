@@ -1,0 +1,182 @@
+{
+  "schema_version": 3,
+  "diagram_type": "lifecycle",
+  "meta": {
+    "title": "머신러닝 수명주기 · 개념 정리",
+    "locale": "ko",
+    "output": ".archify/explainer-ml-lifecycle-20261022-010000/lifecycle-diagram.html",
+    "quality_profile": "showcase"
+  },
+  "mainPath": [
+    "problem",
+    "data",
+    "train",
+    "validation",
+    "test",
+    "deploy"
+  ],
+  "states": [
+    {
+      "id": "problem",
+      "type": "start",
+      "label": "문제 정의",
+      "sublabel": "입출력·성공 기준",
+      "step": "01"
+    },
+    {
+      "id": "data",
+      "type": "active",
+      "label": "데이터 준비",
+      "sublabel": "정제·분할·전처리",
+      "step": "02"
+    },
+    {
+      "id": "train",
+      "type": "active",
+      "label": "모델 학습",
+      "sublabel": "파라미터 갱신",
+      "step": "03"
+    },
+    {
+      "id": "validation",
+      "type": "decision",
+      "label": "검증·선택",
+      "sublabel": "후보 모델 비교",
+      "step": "04"
+    },
+    {
+      "id": "test",
+      "type": "decision",
+      "label": "최종 평가",
+      "sublabel": "독립 테스트 세트",
+      "step": "05"
+    },
+    {
+      "id": "deploy",
+      "type": "active",
+      "label": "배포·추론",
+      "sublabel": "선택한 모델 사용",
+      "step": "06"
+    },
+    {
+      "id": "monitor",
+      "type": "active",
+      "label": "모니터링",
+      "sublabel": "운영·예측 품질",
+      "step": "07"
+    },
+    {
+      "id": "improve",
+      "type": "decision",
+      "label": "개선 판단",
+      "sublabel": "원인·대응 확인"
+    },
+    {
+      "id": "hold",
+      "type": "waiting",
+      "label": "배포 보류",
+      "sublabel": "수정·평가 재설계"
+    },
+    {
+      "id": "retire",
+      "type": "neutral",
+      "label": "모델 종료",
+      "sublabel": "사용 중단·보존"
+    }
+  ],
+  "transitions": [
+    {
+      "from": "problem",
+      "to": "data"
+    },
+    {
+      "from": "data",
+      "to": "train"
+    },
+    {
+      "from": "train",
+      "to": "validation"
+    },
+    {
+      "from": "validation",
+      "to": "test",
+      "label": "기준 통과"
+    },
+    {
+      "from": "test",
+      "to": "deploy",
+      "label": "배포 적합"
+    },
+    {
+      "from": "deploy",
+      "to": "monitor",
+      "label": "운영 중"
+    },
+    {
+      "from": "validation",
+      "to": "train",
+      "label": "모델 조정"
+    },
+    {
+      "from": "validation",
+      "to": "data",
+      "label": "데이터 보완"
+    },
+    {
+      "from": "test",
+      "to": "hold",
+      "label": "기준 미달"
+    },
+    {
+      "from": "hold",
+      "to": "data",
+      "label": "재설계"
+    },
+    {
+      "from": "monitor",
+      "to": "improve",
+      "label": "문제 발견"
+    },
+    {
+      "from": "improve",
+      "to": "data",
+      "label": "재학습 필요"
+    },
+    {
+      "from": "improve",
+      "to": "monitor",
+      "label": "운영 조치"
+    },
+    {
+      "from": "monitor",
+      "to": "retire",
+      "label": "사용 종료"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "학습용 흐름을 정리했음",
+      "items": [
+        "일반적인 수명주기를 나타냄. 실제 구현 상태와는 별개임.",
+        "버전 관리와 모니터링은 여러 단계에 걸쳐 필요함."
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "평가 데이터의 역할을 구분했음",
+      "items": [
+        "검증 세트로 모델을 선택하고 테스트 세트로 최종 평가함.",
+        "테스트 결과로 반복 튜닝하면 새로운 독립 평가가 필요함."
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "문제가 생긴 원인부터 확인함",
+      "items": [
+        "드리프트만으로 정확도 하락을 확정할 수는 없음.",
+        "정답을 모아 성능을 확인하고 재학습·운영 조치를 판단함."
+      ]
+    }
+  ]
+}

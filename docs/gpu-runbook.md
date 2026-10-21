@@ -8,8 +8,10 @@ e101은 RTX 4070 Ti, e102는 RTX 4070이며 노드별 GPU 할당량은 1개다.
 다른 워크로드가 1개를 할당받았다. 물리 GPU 이용률과 Kubernetes 할당량은 다른 값이다.
 
 `nvidia` RuntimeClass와 `ceph-rbd` StorageClass가 존재한다.
-이 확인은 CUDA 프로그램 실행 성공이나 새 PVC 생성 성공의 증거가 아니다.
-아래 실행은 클러스터에 Namespace, PVC, Job을 생성한다. 현재 세션에서는 실행하지 않았다.
+이 최초 조사는 CUDA 프로그램 실행 성공이나 새 PVC 생성 성공의 증거가 아니다.
+이후 2026-10-21 e101에서 공식 런타임 이미지와 코드 ConfigMap으로 GPU 학습·PVC 저장을
+검증했다. [실행 기록](gpu-test-e101-2026-10-21.md)을 참고한다.
+아래는 별도 애플리케이션 이미지를 빌드해 Namespace, PVC, Job을 생성하는 배포 절차다.
 
 ## 실행 전 상태
 
