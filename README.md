@@ -140,7 +140,9 @@ RLHF는 인간 피드백 기반 강화학습이라고 이해했음.
 
 실행 결과는 [e101 GPU 실험 기록](docs/gpu-test-e101-2026-10-21.md)에 따로 남겼음. 기존 설치·실행 방법은 [프로젝트 실행 가이드](docs/project-guide.md)로 옮겼고 [CH1·CH2 정리](docs/ch01-ch02.md)와 [검증 기록](docs/verification.md)도 같이 연결했음.
 
-## CH4·CH5 실습 환경을 기존 k3s 인프라와 비교했음
+## 보충: Kubernetes 자동 운영·자원 관리 자료와 기존 k3s 비교
+
+이 절은 별도 Kubernetes 자료의 CH4·CH5를 비교한 기록이다. MLOps 책 CH4·CH5의 MLflow·Feast·KFP 연결 실습은 [새 실행 기록](docs/platform-test-e101-2026-10-30.md)에 정리했다.
 
 이미 k3s 인프라를 구축해서 사용하고 있으므로, 이번에는 kind로 클러스터를 새로 만드는 사전 준비 대신 기존 인프라 구성을 정리했음. 비교 기준은 스터디의 [CH4 자동 운영](https://app.notion.com/p/gasidaseo/2-CH4-5-3f950aec5edf80499002e77a0c0bdbe0#9f950aec5edf83dba7be81d56a73eb36)과 [CH5 자원 관리](https://app.notion.com/p/gasidaseo/2-CH4-5-3f950aec5edf80499002e77a0c0bdbe0#1c250aec5edf82a9a9e601954988360e)였음.
 
@@ -163,3 +165,13 @@ RLHF는 인간 피드백 기반 강화학습이라고 이해했음.
 학습 결과 저장은 기존 Ceph RBD를 사용했음. `ceph-rbd` StorageClass가 기본값이었고, 이전 실험의 `digits-artifacts-e101` PVC는 1Gi·RWO·Bound 상태로 남아 있었음. 이는 kind 준비 항목과 별개로 이 프로젝트에서 활용하는 기존 저장소 구성임. 조회 시점의 `mlops-lab`에는 Job·Pod·Deployment·StatefulSet·Service가 없었으며, 학습 성공 여부는 [2026-10-21 실행 기록](docs/gpu-test-e101-2026-10-21.md)과 구분해서 확인했음.
 
 인프라 사전 준비는 기존 k3s 환경으로 대체할 수 있다고 정리했음. 다만 CH4·CH5의 앱별 프로브 설계, 배포 중 가용성 확인, 부하 기반 자원 산정은 각각의 워크로드에서 따로 확인해야 함. 학습 Job의 설정 근거는 [공통 Job](deploy/k8s/base/job.yaml), [e101 overlay](deploy/k8s/e101/kustomization.yaml), [e102 overlay](deploy/k8s/e102/kustomization.yaml), [PVC](deploy/k8s/base/pvc.yaml)에 연결했음.
+
+## CH4·CH5 연결 실습과 Velog 정리
+
+기존 학습 코드를 유지하고 MLflow 실험·모델 등록, Feast 피처 조회, KFP 배치 추론을 연결했다. 2026-10-30 e101 GPU Job에서 실행했고, 테스트 360개 중 348개를 맞혔다. KFP는 단일 Pod 안의 `SubprocessRunner`로 실행했다. 공유 MLflow HTTP 서버나 KFP 서버를 설치한 실습과는 구분했다.
+
+- [실행 결과와 검증 범위](docs/platform-test-e101-2026-10-30.md)
+- [재현 방법](docs/ch04-ch05-runbook.md)
+- [CH1·2·3 글 원문](docs/posts/ch01-03.md)
+- [CH4·5 글 원문](docs/posts/ch04-05.md)
+- [Velog MLOps 시리즈](https://velog.io/@ugauga/series/MLOps)

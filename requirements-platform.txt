@@ -1,0 +1,6 @@
+# Optional CH4/5 environment; the existing training and CI lock remain separate.
+mlflow==3.16.0
+feast==0.67.0
+kfp==2.18.0
+numpy==2.2.6
+scikit-learn==1.7.2
