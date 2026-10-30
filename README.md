@@ -136,6 +136,30 @@ RLHF는 인간 피드백 기반 강화학습이라고 이해했음.
 
 학습 1,078개, 검증 359개, 테스트 360개로 나눴고 검증 정확도는 약 95.54%, 테스트 정확도는 약 96.67%였음. 테스트 360개 중 348개를 맞힌 비율임.
 
-(보충: 여기서 확인한 정확도는 해당 테스트 세트의 숫자 분류 정확도임. 실제 문서 OCR 정확도나 GPU 성능을 검증한 수치는 아님. 서비스 배포, 지속적인 운영 모니터링, 자동 재학습은 아직 구현하지 않았음.)
+(보충: 여기서 확인한 정확도는 해당 테스트 세트의 숫자 분류 정확도임. 실제 문서 OCR 정확도나 GPU 성능을 검증한 수치는 아님. 이 모델의 추론 서비스 배포, 모델 품질 모니터링, 자동 재학습은 아직 구현하지 않았음. 기존 클러스터의 인프라 모니터링과는 구분했음.)
 
 실행 결과는 [e101 GPU 실험 기록](docs/gpu-test-e101-2026-10-21.md)에 따로 남겼음. 기존 설치·실행 방법은 [프로젝트 실행 가이드](docs/project-guide.md)로 옮겼고 [CH1·CH2 정리](docs/ch01-ch02.md)와 [검증 기록](docs/verification.md)도 같이 연결했음.
+
+## CH4·CH5 실습 환경을 기존 k3s 인프라와 비교했음
+
+이미 k3s 인프라를 구축해서 사용하고 있으므로, 이번에는 kind로 클러스터를 새로 만드는 사전 준비 대신 기존 인프라 구성을 정리했음. 비교 기준은 스터디의 [CH4 자동 운영](https://app.notion.com/p/gasidaseo/2-CH4-5-3f950aec5edf80499002e77a0c0bdbe0#9f950aec5edf83dba7be81d56a73eb36)과 [CH5 자원 관리](https://app.notion.com/p/gasidaseo/2-CH4-5-3f950aec5edf80499002e77a0c0bdbe0#1c250aec5edf82a9a9e601954988360e)였음.
+
+2026-10-30에 Kubernetes API로 기존 클러스터를 읽기 전용 조회했음. 아래에서 **기존 인프라**는 실제 조회한 설정이고, **학습 Job**은 이 저장소의 매니페스트를 뜻함. 이번 비교를 위해 클러스터 설정을 바꾸거나 새 워크로드를 배포하지는 않았음.
+
+| Notion의 구성·확인 항목 | 기존 인프라 및 이 저장소와 비교한 내용 | 이번에 대체한 범위와 남은 확인 |
+|---|---|---|
+| kind로 Kubernetes 실습 클러스터 생성 | 기존 k3s 클러스터를 사용함. e101~e106, e121, e21, e22의 9개 노드가 모두 Ready였고, e101~e105는 control-plane·etcd 역할이었음. 버전은 `v1.36.4+k3s1`, 런타임은 containerd였음 | 새 클러스터 설치는 기존 환경 설명으로 대체했음. Ready 상태만으로 장애 복구까지 검증했다고 보지는 않았음 |
+| kube-ops-view로 클러스터 상태 시각화 | 기존 Grafana와 kube-state-metrics가 각각 1/1 Ready였음 | 기존 관측 구성을 활용하는 것으로 정리했음. kube-ops-view와 화면·기능이 동일하다는 의미는 아님 |
+| metrics-server 설치와 `kubectl top` 확인 | metrics-server가 2/2 Ready였고 Metrics API의 Available이 True였음. `kubectl top nodes`에서 9개 노드의 CPU·메모리 사용량을 조회했음 | 중복 설치 대신 기존 Metrics API가 동작하는지 확인했음 |
+| CH4의 readiness·liveness·startup 구분 | metrics-server는 `/readyz`·`/livez`, Grafana는 `/api/health`로 readiness·liveness를 설정하고 있었음. 조회한 두 Deployment에는 startupProbe가 없었음 | 기존 서비스에서 두 종류의 프로브 설정을 확인했음. 모든 앱에 3종 프로브를 적용했거나 장애를 주입해 검증했다는 뜻은 아님 |
+| CH4의 RollingUpdate·Recreate·Blue/Green 비교 | metrics-server는 RollingUpdate이며 `maxSurge: 25%`, `maxUnavailable: 25%`였음. Grafana는 Recreate였음. 이 저장소는 Deployment 대신 학습 Job을 정의했음 | 기존 서비스가 서로 다른 전략을 사용한다는 것을 확인했음. 이번 MLOps 모델의 무중단 업데이트·Blue/Green 실습 완료로 기록하지 않았음 |
+| CH5의 requests·limits 지정 | 학습 Job은 CPU `500m / 2`, 메모리 `1Gi / 4Gi`, GPU `1 / 1`을 requests / limits로 설정했음. 기존 metrics-server는 CPU request `100m`에 CPU limit은 없고, 메모리는 `200Mi / 500Mi`였음 | 앱마다 설정이 다름을 비교했음. 학습 Job의 값은 현재 예제 설정이며 부하 테스트로 최적값을 산정한 결과는 아님 |
+| CH5의 QoS 구분 | 학습 Job 매니페스트는 CPU·메모리 request와 limit이 달라 Burstable에 해당하는 구성임. GPU request와 limit이 같다는 사실만으로 Guaranteed가 되지는 않음 | 매니페스트 기준으로 분류했음. 조회 시점에 해당 학습 Pod가 없어서 실행 중인 Pod의 `status.qosClass`를 확인한 결과는 아님 |
+| CH5의 복제본 수와 프로세스·스레드 동시성 | 학습 Job은 `parallelism`을 따로 늘리지 않은 기본 단일 실행이고 `OMP_NUM_THREADS=1`을 지정했음 | 현재는 한 노드의 GPU 1개를 쓰는 학습 예제임. 이 환경에서 Pod 수나 스레드 수를 늘려 성능을 비교한 결과는 아직 없음 |
+| CH5의 스케줄링과 가용 자원 | e101은 RTX 4070 Ti, e102는 RTX 4070이며 노드마다 `nvidia.com/gpu: 1`을 노출했음. 저장소의 노드별 overlay는 `nodeSelector`로 실행 위치를 정함. e102 GPU는 다른 실행 중인 워크로드가 1개를 할당받고 있었음 | GPU가 설치돼 있다는 것과 새 Job을 배치할 여유가 있다는 것을 구분했음. e102를 비어 있는 GPU로 취급하지 않았음 |
+| CH5의 PriorityClass·선점·축출 | 기존 클러스터에는 `ray-workload` PriorityClass가 있고 값은 `-100`, `preemptionPolicy: Never`였음. 이 저장소의 학습 Job에는 `priorityClassName`을 지정하지 않았음 | 기존 정책의 존재와 이 Job에 적용한 정책을 구분했음. 선점·메모리 압박·축출 실험이나 kubelet 축출 임계값 변경은 수행하지 않았음 |
+| CH5의 사용량 측정과 지속 관측 | VictoriaMetrics의 vmagent 2/2, vmsingle-server 1/1, vmalert 1/1, Alertmanager 2/2가 Ready였음. Grafana와 NVIDIA DCGM Exporter도 배포돼 있었음 | 관측 도구가 이미 있다는 점을 반영했음. 이번에는 대시보드별 데이터·경보 전달·온콜 체계까지 검증하지 않았고, 모델 품질 모니터링과도 구분했음 |
+
+학습 결과 저장은 기존 Ceph RBD를 사용했음. `ceph-rbd` StorageClass가 기본값이었고, 이전 실험의 `digits-artifacts-e101` PVC는 1Gi·RWO·Bound 상태로 남아 있었음. 이는 kind 준비 항목과 별개로 이 프로젝트에서 활용하는 기존 저장소 구성임. 조회 시점의 `mlops-lab`에는 Job·Pod·Deployment·StatefulSet·Service가 없었으며, 학습 성공 여부는 [2026-10-21 실행 기록](docs/gpu-test-e101-2026-10-21.md)과 구분해서 확인했음.
+
+인프라 사전 준비는 기존 k3s 환경으로 대체할 수 있다고 정리했음. 다만 CH4·CH5의 앱별 프로브 설계, 배포 중 가용성 확인, 부하 기반 자원 산정은 각각의 워크로드에서 따로 확인해야 함. 학습 Job의 설정 근거는 [공통 Job](deploy/k8s/base/job.yaml), [e101 overlay](deploy/k8s/e101/kustomization.yaml), [e102 overlay](deploy/k8s/e102/kustomization.yaml), [PVC](deploy/k8s/base/pvc.yaml)에 연결했음.
